@@ -10,19 +10,18 @@ class session:
         self.thisHand = hand()
     def parseHands(self):
         for line in open(self.fileName):
-#            if len(self.hands) > 5:
-#                sys.exit(0)
             if 'Ignition Hand #' in line:
                 self.hands.append(hand(0))
                 self.thisHand = self.hands[-1]
                 self.thisHand.id=int(line.split()[2][1:])
+                #print self.thisHand.id
                 self.thisHand.time = line.rstrip()[-8:]
                 self.thisHand.date = line[-21:-11]
                 self.thisHand.BBsize = float(self.fileName.split('$')[2].split('-')[0])
                 self.thisHand.SBsize = float(self.fileName.split('$')[1].split('-')[0])
-#                print 'Hand #',self.thisHand.id
+
             self.thisHand.text+=line
-            #starting stack, position, and identify me
+            #starting stack, players positions, and identify me
             if 'in chips' in line:
                 playerIdx = self.getPlayerIdx(line)
                 startingStack = float(line[line.index('$')+1:line.index('in chips')]) / self.thisHand.BBsize
@@ -30,6 +29,7 @@ class session:
                 if '[ME]' in line:
                     self.thisHand.players[playerIdx].isMe = True
                 self.thisHand.players[playerIdx].position = self.getPosition(line)
+            #identify hole cards
             if 'Card dealt to a spot' in line:
                 if 'Small Blind' in line and self.thisHand.getSB():
                     self.thisHand.getSB().holeCards = self.getHoleCards(line)
@@ -42,16 +42,35 @@ class session:
                 elif 'UTG ' in line and self.thisHand.getUTG():
                     self.thisHand.getUTG().holeCards = self.getHoleCards(line)                                                                
                 elif 'Dealer' in line and self.thisHand.getBTN():
-                    self.thisHand.getBTN().holeCards = self.getHoleCards(line)                                                                
+                    self.thisHand.getBTN().holeCards = self.getHoleCards(line)                                                               
             if '*** FLOP ***' in line or '*** TURN ***' in line or '*** RIVER ***' in line:
                 self.thisHand.streetCounter+=1
+            #parse actions
             if self.isActionLine(line):
                 self.thisHand.actionCounter+=1
                 streets = ['P','F','T','R']
                 newAction = streetAction(streets[self.thisHand.streetCounter],self.thisHand.actionCounter,self.getAction(line),self.getAmount(line))
                 actionPlayer = self.getPlayer(line)
                 actionPlayer.actions.append(newAction)
-                #print newAction.order,newAction.street,actionPlayer.position,newAction.action,newAction.amount
+                actionPlayer.amountWon-=self.getAmount(line)
+                #print newAction.order,newAction.street,actionPlayer.position,newAction.action,newAction.amount,actionPlayer.amountWon
+            if 'Return uncalled' in line:
+                winner = self.getPlayer(line)
+                winner.amountWon+=self.getAmount(line)
+            if 'Hand result' in line:
+                self.thisHand.postRakePot+=self.getAmount(line)
+                winner = self.getPlayer(line)
+                winner.amountWon+=self.getAmount(line)
+                self.thisHand.nWinners+=1
+            if 'Total Pot' in line:
+                self.thisHand.preRakePot=self.getAmount(line)
+                if self.thisHand.getBB():
+                    self.thisHand.getBB().amountWon-=1
+                if self.thisHand.getSB():
+                    self.thisHand.getSB().amountWon-=self.thisHand.SBsize/self.thisHand.BBsize
+                for player in self.thisHand.players:
+                    if player.amountWon > 0:
+                        player.rakePaid+=(self.thisHand.preRakePot-self.thisHand.postRakePot)/self.thisHand.nWinners
     def getHoleCards(self,line):
         return line[line.index('Card dealt to a spot')+22:-4].split()
     def getPlayerIdx(self,line):
@@ -71,6 +90,7 @@ class session:
             return self.thisHand.getSB()
         elif 'Big Blind' in line:
             return self.thisHand.getBB()
+        return
     def getPosition(self,line):
         if 'Dealer' in line:
             return 'BTN'
@@ -84,6 +104,7 @@ class session:
             return 'SB'
         elif 'Big Blind' in line:
             return 'BB'
+        return
     def isActionLine(self,line):
         if self.getAction(line) != '':
             return True
@@ -107,5 +128,5 @@ class session:
     def getAmount(self,line):
         for word in line.split():
             if '$' in word:
-                return float(word[1:])/self.thisHand.BBsize
+                return float(word.split('$')[1].strip('()'))/self.thisHand.BBsize
         return 0.0

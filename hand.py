@@ -11,6 +11,9 @@ class hand:
         self.players = [player(1),player(2),player(3),player(4),player(5),player(6)]
         self.actionCounter = 0
         self.streetCounter = 0
+        self.preRakePot = 0.0
+        self.postRakePot = 0.0
+        self.nWinners = 0
     def getMe(self):
         for player in self.players:
             if player.isMe:

@@ -6,6 +6,7 @@ class player:
         self.isMe = False
         self.position = ''
         self.holeCards = ['','']
-        self.startingStack = 0
+        self.startingStack = 0.0
         self.actions=[]
-        self.amountWon=0
+        self.amountWon=0.0
+        self.rakePaid=0.0
