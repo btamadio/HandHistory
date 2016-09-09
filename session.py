@@ -10,17 +10,17 @@ class session:
         self.thisHand = hand()
     def parseHands(self):
         for line in open(self.fileName):
-            if len(self.hands) > 5:
-                sys.exit(0)
+#            if len(self.hands) > 5:
+#                sys.exit(0)
             if 'Ignition Hand #' in line:
                 self.hands.append(hand(0))
                 self.thisHand = self.hands[-1]
-                self.thisHand.id=line.split()[2][1:]
+                self.thisHand.id=int(line.split()[2][1:])
                 self.thisHand.time = line.rstrip()[-8:]
                 self.thisHand.date = line[-21:-11]
                 self.thisHand.BBsize = float(self.fileName.split('$')[2].split('-')[0])
                 self.thisHand.SBsize = float(self.fileName.split('$')[1].split('-')[0])
-                print 'Hand #',self.thisHand.id
+#                print 'Hand #',self.thisHand.id
             self.thisHand.text+=line
             #starting stack, position, and identify me
             if 'in chips' in line:
@@ -49,11 +49,28 @@ class session:
                 self.thisHand.actionCounter+=1
                 streets = ['P','F','T','R']
                 newAction = streetAction(streets[self.thisHand.streetCounter],self.thisHand.actionCounter,self.getAction(line),self.getAmount(line))
-                print newAction.order,newAction.street,newAction.action,newAction.amount
+                actionPlayer = self.getPlayer(line)
+                actionPlayer.actions.append(newAction)
+                #print newAction.order,newAction.street,actionPlayer.position,newAction.action,newAction.amount
     def getHoleCards(self,line):
         return line[line.index('Card dealt to a spot')+22:-4].split()
     def getPlayerIdx(self,line):
-        return int(line[line.index('Seat')+5])-1
+        if 'Seat' in line:
+            return int(line[line.index('Seat')+5])-1
+        return -1
+    def getPlayer(self,line):
+        if 'Dealer' in line:
+            return self.thisHand.getBTN()
+        elif 'UTG+2' in line:
+            return self.thisHand.getUTG2()
+        elif 'UTG+1' in line:
+            return self.thisHand.getUTG1()
+        elif 'UTG' in line:
+            return self.thisHand.getUTG()
+        elif 'Small Blind' in line:
+            return self.thisHand.getSB()
+        elif 'Big Blind' in line:
+            return self.thisHand.getBB()
     def getPosition(self,line):
         if 'Dealer' in line:
             return 'BTN'
@@ -90,5 +107,5 @@ class session:
     def getAmount(self,line):
         for word in line.split():
             if '$' in word:
-                return float(word[1:])
+                return float(word[1:])/self.thisHand.BBsize
         return 0.0
