@@ -6,8 +6,11 @@ class hand:
         self.text = ''
         self.time = ''
         self.date = ''
+        self.SBsize = 0
         self.BBsize = 0
         self.players = [player(1),player(2),player(3),player(4),player(5),player(6)]
+        self.actionCounter = 0
+        self.streetCounter = 0
     def getMe(self):
         for player in self.players:
             if player.isMe:

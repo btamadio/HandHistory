@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from streetAction import streetAction
 class player:
     def __init__(self,num):
         self.num = num
@@ -6,3 +7,5 @@ class player:
         self.position = ''
         self.holeCards = ['','']
         self.startingStack = 0
+        self.actions=[]
+        self.amountWon=0
