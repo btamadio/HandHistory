@@ -11,10 +11,12 @@ class session:
     def parseHands(self):
         for line in open(self.fileName):
             if 'Ignition Hand #' in line:
+#                print line.split('#')[1].split()[0]
                 self.hands.append(hand(0))
                 self.thisHand = self.hands[-1]
-                self.thisHand.id=int(line.split()[2][1:])
-                #print self.thisHand.id
+                #self.thisHand.id=int(line.split()[2][1:])
+                self.thisHand.id=int(line.split('#')[1].split()[0])
+#                print 'parsing hand #',self.thisHand.id
                 self.thisHand.time = line.rstrip()[-8:]
                 self.thisHand.date = line[-21:-11]
                 self.thisHand.BBsize = float(self.fileName.split('$')[2].split('-')[0])
@@ -45,9 +47,11 @@ class session:
                     self.thisHand.getBTN().holeCards = self.getHoleCards(line)                                                               
             if '*** FLOP ***' in line or '*** TURN ***' in line or '*** RIVER ***' in line:
                 self.thisHand.streetCounter+=1
+
             #parse actions
             if self.isActionLine(line):
                 self.thisHand.actionCounter+=1
+
                 streets = ['P','F','T','R']
                 newAction = streetAction(streets[self.thisHand.streetCounter],self.thisHand.actionCounter,self.getAction(line),self.getAmount(line))
                 actionPlayer = self.getPlayer(line)
